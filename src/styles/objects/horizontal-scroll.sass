@@ -1,0 +1,97 @@
+
+
+.tab-bar
+  --tab-bar-height: 48px
+
+  position: relative
+  z-index: 1
+  display: flex
+  align-items: flex-start
+  justify-content: center
+  height: var(--tab-bar-height)
+  padding:
+    right: calc(var(--tab-bar-height) / 2.5)
+    left: calc(var(--tab-bar-height) / 2.5)
+  overflow: hidden
+  background-color: #2baacd
+
+  &__btn
+    position: absolute
+    top: 0
+    z-index: 1
+    display: flex
+    align-items: center
+    justify-content: center
+    width: calc(var(--tab-bar-height) / 1.5)
+    height: var(--tab-bar-height)
+    border-radius: calc(var(--tab-bar-height) / 2)
+    cursor: pointer
+    visibility: hidden
+    transition: .4s
+    background-color: rgba(255,255,255,0.8)
+
+    &[disabled]
+      cursor: default
+      pointer-events: none
+
+    &-forward
+      right: 0
+      border:
+        top-right-radius: 0
+        bottom-right-radius: 0
+      box-shadow: -1px 2px 2px 0 rgba(0,0,0,0.26)
+
+    &-back
+      left: 0
+      border:
+        top-left-radius: 0
+        bottom-left-radius: 0
+      box-shadow: 1px 2px 2px 0 rgba(0,0,0,0.26)
+
+  &__icon
+    width: calc(var(--tab-bar-height) / 4)
+    height: calc(var(--tab-bar-height) / 4)
+    border: 2px solid rgba(0,0,0,0.7)
+    transform: rotate(45deg)
+
+    &-right
+      border:
+        bottom: none
+        left: none
+
+    &-left
+      border:
+        top: none
+        right: none
+
+  &__scroller
+    padding-bottom: 48px
+    overflow:
+      x: auto
+      y: hidden
+    -webkit-overflow-scrolling: touch
+
+  &__nav
+    position: relative // to calculate the coordinates
+    display: flex
+
+    &-item
+      flex-shrink: 0
+      display: flex
+      align-items: center
+      height: var(--tab-bar-height)
+      padding: 0 16px
+      font:
+        size: 14px
+        weight: 600
+      color: white
+
+
+@media (pointer: coarse)
+  .tab-bar
+    padding:
+      right: 0
+      left: 0
+
+    &__btn
+      display: none
