@@ -1,143 +1,165 @@
 /*!
- Horizontal scroll 2.0
+ Horizontal scroll 3.0
  license: MIT
- Copyright © 2017 Albert Khabibullin. All rights reserved.
+ Copyright © 2019 Albert Khabibullin. All rights reserved.
  https://github.com/iscars/horizontal-scroll
 */
 
-const tabBar = document.querySelector('[data-name="tabBar"]')
+const sliders = document.querySelectorAll('[data-name="slider"]')
+const duration = 300
 
-if (tabBar) { // Init
-    var SCROLLER = tabBar.querySelector('[data-name="tabBarScroller"]') // Scroller
-    var scrollerWidth = SCROLLER.scrollWidth
+document.addEventListener("DOMContentLoaded", () => {
+    if (!sliders.length) return
+    sliders.forEach(slider => new Slider(slider))
+})
 
-    let tabBarItems = tabBar.querySelectorAll('[data-name="tabBarItem"]') // Items
-    tabBarItems = Array.prototype.slice.call(tabBarItems)
-    var arrItemsWidth = tabBarItems.map( (item, i) => {
-        item.setAttribute('id', `tabBarItem${i}`)
-        return item.offsetWidth
 
-    })
-
-    var btnBack = tabBar.querySelector('[data-name="tabBarBtnBack"]') // Buttons
-    var btnForward = tabBar.querySelector('[data-name="tabBarBtnForward"]')
-
-    showButtons() // Check the need for visible buttons
-    window.onresize = () => showButtons()
-    SCROLLER.onscroll = () => showButtons()
-}
-
-function showButtons() {
-    let visibleScroll = SCROLLER.offsetWidth;
-    let scrollLeft = SCROLLER.scrollLeft;
-
-    (scrollerWidth - visibleScroll > 0 && (scrollLeft + visibleScroll + 1) < scrollerWidth) ?
-        btnForward.setAttribute('style', 'visibility: visible; opacity: 1;') :
-        btnForward.setAttribute('style', 'visibility: hidden; opacity: 0;');
-
-    (scrollerWidth - visibleScroll > 0 && scrollLeft > 0) ?
-        btnBack.setAttribute('style', 'visibility: visible; opacity: 1;') :
-        btnBack.setAttribute('style', 'visibility: hidden; opacity: 0;')
-}
-
-btnForward.onclick = (ev) => { // Forward
-    ev && ev.preventDefault && ev.preventDefault()
-    let visibleScroll = SCROLLER.offsetWidth
-    let scrollLeft = SCROLLER.scrollLeft
-    let scrollRight = scrollLeft + visibleScroll
-    let nextItem = getNextItem(scrollLeft, scrollRight)
-    let nextItemId = `tabBarItem${nextItem}`
-    let possibleScroll = scrollerWidth - visibleScroll + 1
-    let nextItemLeft = document.getElementById(nextItemId).offsetLeft;
-
-    (possibleScroll < nextItemLeft) ?
-        scrollToId(nextItemId, possibleScroll) :
-        scrollToId(nextItemId)
-}
-
-btnBack.onclick = (ev) => { // Back
-    ev && ev.preventDefault && ev.preventDefault()
-    let visibleScroll = SCROLLER.offsetWidth
-    let scrollLeft = SCROLLER.scrollLeft
-    let firstVisible = getFirstVisible(scrollLeft)
-    let prevItem = getPrevItem(visibleScroll, firstVisible)
-    let prevItemId = `tabBarItem${prevItem}`
-    scrollToId(prevItemId)
-}
-
-function getNextItem(scrollLeft, scrollRight) {
-    let visibleItems = 0,
-        beforeItems = 0,
-        i = 0
-    do {
-        visibleItems += arrItemsWidth[i]
-        i++
-    } while (scrollRight >= visibleItems && i < arrItemsWidth.length)
-    i--
-    for (let j = 0; j < i; j++) {
-        beforeItems += arrItemsWidth[j]
-    }
-    beforeItems = beforeItems - 1;
-    (beforeItems <= scrollLeft) ? i++ : i
-    return i
-}
-
-function getFirstVisible(scrollLeft) {
-    let first = 0, i = 0
-    while (first < scrollLeft) {
-        first += arrItemsWidth[i]
-        i++
+class Slider {
+    constructor(slider) {
+        this.slider = slider
+        this.scroller = this.slider.querySelector('[data-name="slider_scroller"]')
+        this.scrollerWidth = this.scroller.scrollWidth
+        this.items = this.slider.querySelectorAll('[data-name="slider_item"]')
+        this.itemsWidths = Object.values(this.items).map( item => item.offsetWidth)
+        this.btnPrevious = this.slider.querySelector('[data-name="slider_previous"]')
+        this.btnNext = this.slider.querySelector('[data-name="slider_next"]')
+        this.componentMount()
     }
 
-    return i
-}
-
-function getPrevItem(visibleScroll, firstVisible) {
-    let i = firstVisible, possible = 0
-
-    if (arrItemsWidth[i - 1] >= visibleScroll) {
-        return i - 1
+    componentMount() {
+        this.checkShowButtons()
+        window.addEventListener("resize", () => this.checkShowButtons())
+        this.scroller.addEventListener("scroll", () => this.checkShowButtons())
+        this.btnNext.addEventListener("click", () => this.checkScrollNext())
+        this.btnPrevious.addEventListener("click", () => this.checkScrollPrevious())
     }
-    else {
-        do {
-            i--
-            possible += arrItemsWidth[i]
-        } while (possible < visibleScroll && i > -1)
-        return i + 1
-    }
-}
 
-function scrollToId(id, possibleScroll) {
-    let duration = 400
-    let offsetLeft = (possibleScroll) ? possibleScroll : document.getElementById(id).offsetLeft
-    animateScroll(SCROLLER, offsetLeft, duration)
+    checkShowButtons() {
+        const scrollerVisibleWidth = this.scroller.offsetWidth
+        const scrollerScrollLeft = this.scroller.scrollLeft
 
-    btnBack.setAttribute('disabled', true)
-    btnForward.setAttribute('disabled', true)
-    setTimeout( () => {
-        btnBack.removeAttribute('disabled')
-        btnForward.removeAttribute('disabled')
-    }, duration + 50)
-}
+        if (this.scrollerWidth - scrollerVisibleWidth > 0
+            && (scrollerScrollLeft + scrollerVisibleWidth + 1) < this.scrollerWidth) {
+            this.btnNext.classList.add('visible')
+        } else {
+            this.btnNext.classList.remove('visible')
+        }
 
-function animateScroll(element, to, duration) {
-    let start = element.scrollLeft,
-        change = to - start,
-        currentTime = 0,
-        increment = 20
-    let doScroll = () => {
-        currentTime += increment
-        let val = Math.easeInOutQuad(currentTime, start, change, duration)
-        element.scrollLeft = val
-        if (currentTime < duration) {
-            setTimeout(doScroll, increment)
+        if (this.scrollerWidth - scrollerVisibleWidth > 0 && scrollerScrollLeft > 0) {
+            this.btnPrevious.classList.add('visible')
+        } else {
+            this.btnPrevious.classList.remove('visible')
         }
     }
-    Math.easeInOutQuad = (t, b, c, d) => {
-        t /= d/2
-        if (t < 1) return c/2*t*t + b
-        t--
-        return -c/2 * (t*(t-2) - 1) + b
+
+    checkScrollNext() {
+        const scrollerVisibleWidth = this.scroller.offsetWidth
+        const scrollerScrollLeft = this.scroller.scrollLeft
+        const scrollerScrollRight = scrollerScrollLeft + scrollerVisibleWidth
+        const nextItemIndex = getNextItem(scrollerScrollLeft, scrollerScrollRight, this.itemsWidths, this.items)
+        const possibleScroll = this.scrollerWidth - scrollerVisibleWidth + 1
+        const nextItem = (nextItemIndex !== this.items.length) ? this.items[nextItemIndex].offsetLeft : null
+
+        function getNextItem(left, right, widths, items) {
+            let availableWidth = 0, visibleWidth = 0, i = 0
+
+            do {
+                availableWidth += widths[i]
+                i++
+            } while (right >= availableWidth && i < widths.length)
+
+            i = i - 1
+
+            for (let j = 0; j < i; j++) {
+                visibleWidth += widths[j]
+            }
+
+            return (visibleWidth <= left) ? i + 1 : i // Возникают проблемы вычислений для элементов, размеры которых
+            // зависят от шрифтов. Все элементы имеют дробные значения и округляются до целого. В результате
+            // 79.68 + 81.73 округляется как 80 + 82 = 162. В то время как scrollLeft получает значение 161.41 и
+            // округляет до 161. Результатом является
+            // зацикливание на одном элементе, отказ прокрутки вправо.
+            // 1. Подобные ошибки возникают меньше при использовании универсальных шрифтов для разных ОС. Например Arial
+            // не воспринимается OSX правильно.
+            // 2. Установить диапазон погрешности, изменить условие на (visibleWidth - n <= left), где n - кол-во
+            // пикселей погрешности. Чем дальше влево прокрутка, тем больше погрешность.
+        }
+
+        if (possibleScroll < nextItem || nextItemIndex === this.items.length) {
+            this.prepareScrolling(possibleScroll)
+        } else {
+            this.prepareScrolling(nextItem)
+        }
     }
-    doScroll()
+
+    checkScrollPrevious() {
+        const scrollerVisibleWidth = this.scroller.offsetWidth
+        const scrollerScrollLeft = this.scroller.scrollLeft
+        const firstVisible = getFirstVisible(scrollerScrollLeft, this.itemsWidths)
+        const prevItemIndex = getPrevItem(scrollerVisibleWidth, firstVisible, this.itemsWidths)
+        const nextItem = this.items[prevItemIndex].offsetLeft
+        this.prepareScrolling(nextItem)
+
+        function getFirstVisible(scrollLeft, widths) {
+            let first = 0, i = 0
+
+            while (first < scrollLeft) {
+                first += widths[i]
+                i++
+            }
+
+            return i
+        }
+
+        function getPrevItem(visibleScroll, firstVisible, widths) {
+            let i = firstVisible, possible = 0
+
+            if (widths[i - 1] >= visibleScroll) {
+                return i - 1
+            }
+            else {
+                do {
+                    i--
+                    possible += widths[i]
+                } while (possible < visibleScroll && i > -1)
+                return i + 1
+            }
+        }
+    }
+
+    prepareScrolling(offsetLeft) {
+        const start = this.scroller.scrollLeft
+        const distance = offsetLeft - start
+        this.animateScrolling(start, distance)
+
+        this.btnPrevious.disabled = true
+        this.btnNext.disabled = true
+
+        setTimeout( () => {
+            this.btnPrevious.disabled = false
+            this.btnNext.disabled = false
+        }, duration + 50)
+    }
+
+    animateScrolling(start, distance) {
+        let currentTime = 0
+        const increment = 20
+
+        Math.easeInOutQuad = (t, b, c, d) => {
+            t /= d/2
+            if (t < 1) return c/2*t*t + b
+            t--
+            return -c/2 * (t*(t-2) - 1) + b
+        }
+
+        const doScroll = () => {
+            currentTime += increment
+            this.scroller.scrollLeft = Math.easeInOutQuad(currentTime, start, distance, duration)
+            if (currentTime < duration) {
+                setTimeout(doScroll, increment)
+            }
+        }
+
+        doScroll()
+    }
 }
