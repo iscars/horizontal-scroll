@@ -28,18 +28,25 @@ class Slider {
 
     componentMount() {
         this.checkShowButtons()
-        window.addEventListener("resize", () => this.checkShowButtons())
-        this.scroller.addEventListener("scroll", () => this.checkShowButtons())
-        this.btnNext.addEventListener("click", () => this.checkScrollNext())
-        this.btnPrevious.addEventListener("click", () => this.checkScrollPrevious())
+        window.addEventListener('load', this.windowOnload)
+        window.addEventListener("resize", this.checkShowButtons)
+        this.scroller.addEventListener("scroll", this.checkShowButtons)
+        this.btnNext.addEventListener("click", this.checkScrollNext)
+        this.btnPrevious.addEventListener("click", this.checkScrollPrevious)
     }
 
-    checkShowButtons() {
+    windowOnload = () => {
+        this.itemsWidths = Object.values(this.items).map( item => item.offsetWidth)
+        this.scrollerWidth = this.scroller.scrollWidth
+        this.checkShowButtons()
+    }
+
+    checkShowButtons = () => {
         const scrollerVisibleWidth = this.scroller.offsetWidth
         const scrollerScrollLeft = this.scroller.scrollLeft
 
         if (this.scrollerWidth - scrollerVisibleWidth > 0
-            && (scrollerScrollLeft + scrollerVisibleWidth + 1) < this.scrollerWidth) {
+            && scrollerScrollLeft + scrollerVisibleWidth < this.scrollerWidth) {
             this.btnNext.classList.add('visible')
         } else {
             this.btnNext.classList.remove('visible')
@@ -52,15 +59,15 @@ class Slider {
         }
     }
 
-    checkScrollNext() {
+    checkScrollNext = () => {
         const scrollerVisibleWidth = this.scroller.offsetWidth
         const scrollerScrollLeft = this.scroller.scrollLeft
         const scrollerScrollRight = scrollerScrollLeft + scrollerVisibleWidth
-        const nextItemIndex = getNextItem(scrollerScrollLeft, scrollerScrollRight, this.itemsWidths, this.items)
+        const nextItemIndex = getNextItem(scrollerScrollLeft, scrollerScrollRight, this.itemsWidths)
         const possibleScroll = this.scrollerWidth - scrollerVisibleWidth + 1
         const nextItem = (nextItemIndex !== this.items.length) ? this.items[nextItemIndex].offsetLeft : null
 
-        function getNextItem(left, right, widths, items) {
+        function getNextItem(left, right, widths) {
             let availableWidth = 0, visibleWidth = 0, i = 0
 
             do {
@@ -77,10 +84,9 @@ class Slider {
             return (visibleWidth <= left) ? i + 1 : i // Возникают проблемы вычислений для элементов, размеры которых
             // зависят от шрифтов. Все элементы имеют дробные значения и округляются до целого. В результате
             // 79.68 + 81.73 округляется как 80 + 82 = 162. В то время как scrollLeft получает значение 161.41 и
-            // округляет до 161. Результатом является
-            // зацикливание на одном элементе, отказ прокрутки вправо.
+            // округляет до 161. Результатом является зацикливание на одном элементе, отказ прокрутки вправо.
             // 1. Подобные ошибки возникают меньше при использовании универсальных шрифтов для разных ОС. Например Arial
-            // не воспринимается OSX правильно.
+            // не воспринимается OSX правильно, нужно использовать sans-serif.
             // 2. Установить диапазон погрешности, изменить условие на (visibleWidth - n <= left), где n - кол-во
             // пикселей погрешности. Чем дальше влево прокрутка, тем больше погрешность.
         }
@@ -92,7 +98,7 @@ class Slider {
         }
     }
 
-    checkScrollPrevious() {
+    checkScrollPrevious = () => {
         const scrollerVisibleWidth = this.scroller.offsetWidth
         const scrollerScrollLeft = this.scroller.scrollLeft
         const firstVisible = getFirstVisible(scrollerScrollLeft, this.itemsWidths)
